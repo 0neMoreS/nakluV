@@ -27,10 +27,10 @@ custom_flags_and_rules();
 //maek.CPP(...) builds a c++ file:
 // it returns the path to the output object file
 const main_objs = [
-	maek.CPP('Tutorial.cpp'),
-	maek.CPP('RTG.cpp'),
-	maek.CPP('Helpers.cpp'),
-	maek.CPP('main.cpp'),
+	maek.CPP('./src/core/Tutorial.cpp'),
+	maek.CPP('./src/core/RTG.cpp'),
+	maek.CPP('./src/utils/Helpers.cpp'),
+	maek.CPP('./src/main.cpp'),
 ];
 
 //maek.GLSLC(...) builds a glsl source file:
@@ -81,9 +81,9 @@ function custom_flags_and_rules() {
 	let VULKAN_SDK; //this will also be set to point to the location of the Vulkan SDK (needed for running glslc)
 
 	if (maek.OS === 'linux') {
-		VULKAN_SDK = process.env.VULKAN_SDK || `${process.env.HOME}/VulkanSDK/1.3.290.0/x86_64`;
+		VULKAN_SDK = process.env.VULKAN_SDK || `./external/1.3.290.0/x86_64`;
 		console.log(`Using VULKAN_SDK='${VULKAN_SDK}'; set VULKAN_SDK environment variable to override.`);
-		const GLFW_DIR = process.env.GLFW_DIR || `../glfw-3.4/out`;
+		const GLFW_DIR = process.env.GLFW_DIR || `./external/glfw-3.4/out`;
 		console.log(`Using GLFW_DIR='${GLFW_DIR}'; set GLFW_DIR environment variable to override.`);
 
 		maek.options.CPP = ['g++', '-std=c++20', '-Wall', '-Werror', '-g'];
@@ -92,7 +92,9 @@ function custom_flags_and_rules() {
 		maek.options.CPPFlags = [
 			'-O2',
 			`-I${VULKAN_SDK}/include`,
-			`-I${GLFW_DIR}/include`
+			`-I${GLFW_DIR}/include`,
+			`-I./src/core`,
+			`-I./src/utils`
 		];
 
 		maek.options.LINKLibs = [
