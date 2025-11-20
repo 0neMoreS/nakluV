@@ -28,7 +28,7 @@ custom_flags_and_rules();
 // it returns the path to the output object file
 const main_objs = [
 	maek.CPP('./src/core/Tutorial.cpp'),
-	maek.CPP('./src/core/RTG.cpp'),
+	maek.CPP('./src/utils/RTG.cpp'),
 	maek.CPP('./src/utils/Helpers.cpp'),
 	maek.CPP('./src/main.cpp'),
 ];
@@ -37,11 +37,11 @@ const main_objs = [
 // it returns the path to the output .inl file
 
 //uncomment to build background shaders and pipeline:
-//const background_shaders = [
-//	maek.GLSLC('background.vert'),
-//	maek.GLSLC('background.frag'),
-//];
-//main_objs.push( maek.CPP('Tutorial-BackgroundPipeline.cpp', undefined, { depends:[...background_shaders] } ) );
+const background_shaders = [
+	maek.GLSLC('./src/shaders/background.vert'),
+	maek.GLSLC('./src/shaders/background.frag'),
+];
+main_objs.push( maek.CPP('./src/core/Tutorial-BackgroundPipeline.cpp', undefined, { depends:[...background_shaders] } ) );
 
 //uncomment to build lines shaders and pipeline:
 //const lines_shaders = [
@@ -174,7 +174,7 @@ function custom_flags_and_rules() {
 	maek.DEFAULT_OPTIONS.GLSLC = [`${VULKAN_SDK}/bin/glslc` + (maek.OS === 'windows' ? '.exe' : ''), '-Werror', '-g', '-mfmt=c', '--target-env=vulkan1.2'];
 	maek.DEFAULT_OPTIONS.GLSLCFlags = [];
 	maek.DEFAULT_OPTIONS.spirvSuffix = '.inl';
-	maek.DEFAULT_OPTIONS.spirvPrefix = 'spv/';
+	maek.DEFAULT_OPTIONS.spirvPrefix = '/spv/';
 
 	//maek.GLSLC is a rule to run google's "glslc" compiler:
 	// glslFile is the source file name (if it has a generic extension, make sure to add '-fshader-stage=...' option)
@@ -188,7 +188,10 @@ function custom_flags_and_rules() {
 
 		//if objFileBase isn't given, compute by adding spirvSuffix to glslFile:
 		if (typeof spirvFileBase === 'undefined') {
-			spirvFileBase = path.relative('', options.spirvPrefix + glslFile, '');
+			// spirvFileBase = path.relative('', options.spirvPrefix + glslFile, '');
+			const dir = path.dirname(glslFile);
+			const base = path.basename(glslFile);
+			spirvFileBase = path.join(dir, "spv", base);
 		}
 
 		//object file gets os-dependent suffix:
@@ -209,6 +212,20 @@ function custom_flags_and_rules() {
 					};
 				}
 			);
+
+			try {
+            let content = await fsPromises.readFile(spirvFile, "utf8");
+
+            content = content
+                .replace(/^\s*{\s*/, "")
+                .replace(/\s*};?\s*$/, "")
+                .trim();
+
+            await fsPromises.writeFile(spirvFile, content);
+			} catch (err) {
+				console.error("Failed to strip braces from:", spirvFile, err);
+				throw err;
+			}
 		};
 
 		task.depends = [glslFile, ...options.depends];
