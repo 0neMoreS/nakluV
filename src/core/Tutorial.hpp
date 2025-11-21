@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PosColVertex.hpp"
 #include "RTG.hpp"
 
 struct Tutorial : RTG::Application {
@@ -46,7 +47,7 @@ struct Tutorial : RTG::Application {
 
 		VkPipelineLayout layout = VK_NULL_HANDLE;
 
-		//no vertex bindings (yet)
+		using Vertex = PosColVertex;
 
 		VkPipeline handle = VK_NULL_HANDLE;
 
@@ -87,6 +88,8 @@ struct Tutorial : RTG::Application {
 	virtual void on_input(InputEvent const &) override;
 
 	float time = 0.0f;
+
+	std::vector< LinesPipeline::Vertex > lines_vertices;
 
 	//--------------------------------------------------------------------
 	//Rendering function, uses all the resources above to queue work to draw a frame:
