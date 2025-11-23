@@ -102,22 +102,116 @@ Tutorial::Tutorial(RTG &rtg_) : rtg(rtg_) {
 	}
 
 	{ //create object vertices
-		std::vector< PosColVertex > vertices;
+		std::vector< PosNorTexVertex > vertices;
 		
-		//TODO: replace with more interesting geometry
-		//A single triangle:
-		vertices.emplace_back(PosColVertex{
-			.Position{ .x = 0.0f, .y = 0.0f, .z = 0.0f },
-			.Color{ .r = 0xff, .g = 0xff, .b = 0xff, .a = 0xff  },
-		});
-		vertices.emplace_back(PosColVertex{
-			.Position{ .x = 1.0f, .y = 0.0f, .z = 0.0f },
-			.Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0xff },
-		});
-		vertices.emplace_back(PosColVertex{
-			.Position{ .x = 0.0f, .y = 1.0f, .z = 0.0f },
-			.Color{ .r = 0x00, .g = 0xff, .b = 0x00, .a = 0xff  },
-		});
+		{ //A [-1,1]x[-1,1]x{0} quadrilateral:
+			plane_vertices.first = uint32_t(vertices.size());
+			vertices.emplace_back(PosNorTexVertex{
+				.Position{ .x = -1.0f, .y = -1.0f, .z = 0.0f },
+				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+				.TexCoord{ .s = 0.0f, .t = 0.0f },
+			});
+			vertices.emplace_back(PosNorTexVertex{
+				.Position{ .x = 1.0f, .y = -1.0f, .z = 0.0f },
+				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+				.TexCoord{ .s = 1.0f, .t = 0.0f },
+			});
+			vertices.emplace_back(PosNorTexVertex{
+				.Position{ .x = -1.0f, .y = 1.0f, .z = 0.0f },
+				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+				.TexCoord{ .s = 0.0f, .t = 1.0f },
+			});
+			vertices.emplace_back(PosNorTexVertex{
+				.Position{ .x = 1.0f, .y = 1.0f, .z = 0.0f },
+				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+				.TexCoord{ .s = 1.0f, .t = 1.0f },
+			});
+			vertices.emplace_back(PosNorTexVertex{
+				.Position{ .x = -1.0f, .y = 1.0f, .z = 0.0f },
+				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+				.TexCoord{ .s = 0.0f, .t = 1.0f },
+			});
+			vertices.emplace_back(PosNorTexVertex{
+				.Position{ .x = 1.0f, .y = -1.0f, .z = 0.0f },
+				.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f},
+				.TexCoord{ .s = 1.0f, .t = 0.0f },
+			});
+
+			plane_vertices.count = uint32_t(vertices.size()) - plane_vertices.first;
+		}
+
+		{ //A torus:
+			torus_vertices.first = uint32_t(vertices.size());
+
+				//will parameterize with (u,v) where:
+				// - u is angle around main axis (+z)
+				// - v is angle around the tube
+
+				constexpr float R1 = 0.75f; //main radius
+				constexpr float R2 = 0.15f; //tube radius
+
+				constexpr uint32_t U_STEPS = 20;
+				constexpr uint32_t V_STEPS = 16;
+
+				//texture repeats around the torus:
+				constexpr float V_REPEATS = 2.0f;
+				constexpr float U_REPEATS = std::ceil(V_REPEATS / R2 * R1);
+
+				auto emplace_vertex = [&](uint32_t ui, uint32_t vi) {
+					//convert steps to angles:
+					// (doing the mod since trig on 2 M_PI may not exactly match 0)
+					float ua = (ui % U_STEPS) / float(U_STEPS) * 2.0f * float(M_PI);
+					float va = (vi % V_STEPS) / float(V_STEPS) * 2.0f * float(M_PI);
+
+					vertices.emplace_back( PosNorTexVertex{
+						.Position{
+							.x = (R1 + R2 * std::cos(va)) * std::cos(ua),
+							.y = (R1 + R2 * std::cos(va)) * std::sin(ua),
+							.z = R2 * std::sin(va),
+						},
+						.Normal{
+							.x = std::cos(va) * std::cos(ua),
+							.y = std::cos(va) * std::sin(ua),
+							.z = std::sin(va),
+						},
+						.TexCoord{
+							.s = ui / float(U_STEPS) * U_REPEATS,
+							.t = vi / float(V_STEPS) * V_REPEATS,
+						},
+					});
+				};
+
+				for (uint32_t ui = 0; ui < U_STEPS; ++ui) {
+					for (uint32_t vi = 0; vi < V_STEPS; ++vi) {
+						emplace_vertex(ui, vi);
+						emplace_vertex(ui+1, vi);
+						emplace_vertex(ui, vi+1);
+
+						emplace_vertex(ui, vi+1);
+						emplace_vertex(ui+1, vi);
+						emplace_vertex(ui+1, vi+1);
+					}
+				}
+
+			torus_vertices.count = uint32_t(vertices.size()) - torus_vertices.first;
+		}
+		
+		// //A single triangle:
+		// vertices.emplace_back(PosNorTexVertex{
+		// 	.Position{ .x = 0.0f, .y = 0.0f, .z = 0.0f },
+		// 	.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+		// 	.TexCoord{ .s = 0.0f, .t = 0.0f },
+		// });
+		// vertices.emplace_back(PosNorTexVertex{
+		// 	.Position{ .x = 1.0f, .y = 0.0f, .z = 0.0f },
+		// 	.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+		// 	.TexCoord{ .s = 1.0f, .t = 0.0f },
+		// });
+		// vertices.emplace_back(PosNorTexVertex{
+		// 	.Position{ .x = 0.0f, .y = 1.0f, .z = 0.0f },
+		// 	.Normal{ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+		// 	.TexCoord{ .s = 0.0f, .t = 1.0f },
+		// });
 
 		size_t bytes = vertices.size() * sizeof(vertices[0]);
 

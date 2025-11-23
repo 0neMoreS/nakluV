@@ -29,6 +29,7 @@ custom_flags_and_rules();
 const main_objs = [
 	maek.CPP('./src/core/Tutorial.cpp'),
 	maek.CPP('./src/core/PosColVertex.cpp'),
+	maek.CPP('./src/core/PosNorTexVertex.cpp'),
 	maek.CPP('./src/utils/RTG.cpp'),
 	maek.CPP('./src/utils/Helpers.cpp'),
 	maek.CPP('./src/main.cpp'),
